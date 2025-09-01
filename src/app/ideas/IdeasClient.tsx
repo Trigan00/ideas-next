@@ -1,91 +1,135 @@
 // app/ideas/IdeasClient.tsx
 "use client";
 
+import Card from "@/componets/UI/Card";
+import SkeletonCard from "@/componets/UI/SkeletonCard";
+import Tag from "@/componets/UI/Tag";
+import formatDate from "@/helpers/formateDate";
+import { IdeaRow } from "@/types/types";
+import { Search, Sparkles, Star } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-type Idea = {
-  idea_id: number;
-  summary: string;
-  problem: string;
-  solution: string;
-  score: number;
-  created_at: string;
-};
+function unique<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr));
+}
 
 export default function IdeasClient({
   initialIdeas,
 }: {
-  initialIdeas: Idea[];
+  initialIdeas: IdeaRow[];
 }) {
-  const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
-  const [search, setSearch] = useState("");
-  const [minScore, setMinScore] = useState(0);
-  const [maxScore, setMaxScore] = useState(100);
+  const router = useRouter();
+
+  const [ideas, setIdeas] = useState<IdeaRow[]>(initialIdeas);
+  // const [minScore, setMinScore] = useState(0);
+  // const [maxScore, setMaxScore] = useState(100);
+  const [isLoading, setIsLoading] = useState(false);
+  const [q, setQ] = useState("");
 
   async function fetchIdeas() {
-    const params = new URLSearchParams({
-      search,
-      minScore: String(minScore),
-      maxScore: String(maxScore),
-    });
-    const res = await fetch(`/api/ideas?${params.toString()}`);
-    const data = await res.json();
-    setIdeas(data);
+    try {
+      const params = new URLSearchParams({
+        search: q,
+        // minScore: String(minScore),
+        // maxScore: String(maxScore),
+      });
+      setIsLoading(true);
+      const res = await fetch(`/api/ideas?${params.toString()}`);
+      const data = await res.json();
+      setIdeas(data);
+      setIsLoading(false);
+    } catch (error) {
+      console.log(error);
+      setIsLoading(false);
+    }
   }
 
-  useEffect(() => {
-    if (search || minScore !== 0 || maxScore !== 100) {
-      fetchIdeas();
-    } else {
-      setIdeas(initialIdeas);
-    }
-  }, [search, minScore, maxScore]);
+  const filtered = (ideas || []).filter((i) => {
+    const hay = `${i.summary} ${i.problem}`.toLowerCase();
+    return hay.includes(q.toLowerCase());
+  });
+
+  // useEffect(() => {
+  //   if (search || minScore !== 0 || maxScore !== 100) {
+  //     fetchIdeas();
+  //   } else {
+  //     setIdeas(initialIdeas);
+  //   }
+  // }, [search, minScore, maxScore]);
 
   return (
-    <>
-      {/* Фильтры */}
-      <div className="flex gap-4 mb-6">
-        <input
-          type="text"
-          placeholder="Поиск по summary..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border rounded p-2 w-64"
-        />
-        <input
-          type="number"
-          placeholder="Min score"
-          value={minScore}
-          onChange={(e) => setMinScore(Number(e.target.value))}
-          className="border rounded p-2 w-24"
-        />
-        <input
-          type="number"
-          placeholder="Max score"
-          value={maxScore}
-          onChange={(e) => setMaxScore(Number(e.target.value))}
-          className="border rounded p-2 w-24"
-        />
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 text-gray-900 dark:text-gray-50">
+      <header className="sticky top-0 z-10 backdrop-blur bg-white/70 dark:bg-gray-950/50 border-b border-gray-200 dark:border-gray-800">
+        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center gap-3">
+          <Sparkles className="h-6 w-6" />
+          <h1 className="text-xl font-semibold">Idea Explorer</h1>
+          <div className="ml-auto relative w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Search ideas..."
+            />
+          </div>
+        </div>
+      </header>
 
-      {/* Список идей */}
-      <ul className="space-y-3">
-        {ideas.length === 0 ? (
-          <p className="text-gray-500">Нет идей по запросу</p>
-        ) : (
-          ideas.map((idea) => (
-            <li key={idea.idea_id} className="p-4 border rounded-lg">
-              <h2 className="font-semibold">{idea.summary}</h2>
-              <p className="text-sm text-gray-600">{idea.problem}</p>
-              <p className="text-sm text-gray-800 mt-1">💡 {idea.solution}</p>
-              <p className="text-xs text-gray-400 mt-2">
-                Score: {idea.score} |{" "}
-                {new Date(idea.created_at).toLocaleDateString()}
-              </p>
-            </li>
-          ))
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        {isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
         )}
-      </ul>
-    </>
+        {/* {error && <div className="text-red-600">Failed to load ideas</div>} */}
+        {/* {!isLoading && !error && ( */}
+        {!isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((idea) => {
+              const subs = unique(
+                (idea.sources || [])
+                  .map((s) => s.subreddit || "")
+                  .filter(Boolean)
+              );
+              return (
+                <Card
+                  key={idea.idea_id}
+                  onClick={() => router.push(`/ideas/${idea.idea_id}`)}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <h3 className="text-lg font-semibold leading-snug">
+                      {idea.summary}
+                    </h3>
+                    <div className="shrink-0 flex items-center gap-1 text-amber-500">
+                      <Star className="h-4 w-4" />
+                      <span className="text-sm">{idea.score.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+                    {idea.problem}
+                  </p>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {subs.length ? (
+                      subs.map((s) => <Tag key={s}>r/{s}</Tag>)
+                    ) : (
+                      <Tag>no-subreddit</Tag>
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>Created {formatDate(idea.created_at)}</span>
+                    <span>{idea.sources?.length || 0} sources</span>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </main>
+    </div>
   );
 }

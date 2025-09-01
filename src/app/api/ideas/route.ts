@@ -14,9 +14,15 @@ export async function GET(req: Request) {
         i.id AS idea_id,
         i.summary,
         i.problem,
+        i.personas,
         i.solution,
+        i.gtm,
+        i.risks,
+        i.monetization,
+        i.kpis,
         i.score,
-        i.created_at
+        i.created_at,
+        i.sources
       FROM ideas i
       WHERE i.summary NOT LIKE 'Automated assistant to remove the top%'
         AND i.summary ILIKE $1
