@@ -96,8 +96,8 @@ export default function IdeasClient({
               );
               return (
                 <Card
-                  key={idea.idea_id}
-                  onClick={() => router.push(`/ideas/${idea.idea_id}`)}
+                  key={idea.id}
+                  onClick={() => router.push(`/ideas/${idea.id}`)}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <h3 className="text-lg font-semibold leading-snug">

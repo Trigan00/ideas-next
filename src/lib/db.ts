@@ -1,9 +1,16 @@
-import pkg from "pg";
+// import pkg from "pg";
 
-const { Pool } = pkg;
+// const { Pool } = pkg;
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+// const pool = new Pool({
+//   connectionString: process.env.DATABASE_URL,
+// });
 
-export default pool;
+// export default pool;
+// lib/supabaseClient.ts
+import { createClient } from "@supabase/supabase-js";
+
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY! // или ANON KEY, если только чтение
+);

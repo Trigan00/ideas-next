@@ -1,5 +1,5 @@
 // app/ideas/[id]/page.tsx (Server Component)
-import pool from "@/lib/db";
+import { supabase } from "@/lib/db";
 import Details from "./Details";
 
 export const metadata = {
@@ -9,28 +9,36 @@ export const metadata = {
 
 export default async function IdeaPage({ params }: { params: { id: string } }) {
   const { id } = await params;
-  const sql = `
-    SELECT
-        i.id AS idea_id,
-        i.summary,
-        i.problem,
-        i.personas,
-        i.solution,
-        i.gtm,
-        i.risks,
-        i.monetization,
-        i.kpis,
-        i.score,
-        i.created_at,
-        i.sources
-      FROM ideas i
-      WHERE i.id=$1;
-  `;
-  const { rows } = await pool.query(sql, [id]);
 
-  if (!rows.length) {
+  const { data: idea, error } = await supabase
+    .from("ideas")
+    .select(
+      `
+      id,
+      summary,
+      problem,
+      personas,
+      solution,
+      gtm,
+      risks,
+      monetization,
+      kpis,
+      score,
+      created_at,
+      sources
+    `
+    )
+    .eq("id", id) // WHERE i.id = $1
+    .single(); // т.к. одна запись
+
+  if (error) {
+    console.error(error);
+    return <div>Ошибка загрузки идеи</div>;
+  }
+
+  if (!idea) {
     return <div>Идея не найдена</div>;
   }
 
-  return <Details idea={rows[0]} />;
+  return <Details idea={idea as any} />;
 }

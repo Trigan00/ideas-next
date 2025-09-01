@@ -4,7 +4,7 @@ export type Source = {
   url: string | null;
 };
 export type IdeaRow = {
-  idea_id: number;
+  id: number;
   summary: string;
   problem: string;
   personas: string; // JSON string or plain

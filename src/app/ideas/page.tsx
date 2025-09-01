@@ -1,32 +1,36 @@
-// app/ideas/page.tsx (Server Component)
-import pool from "@/lib/db";
+// app/ideas/page.tsx
+import { supabase } from "@/lib/db";
 import IdeasClient from "./IdeasClient";
+import { IdeaRow } from "@/types/types";
 
 export const metadata = {
   title: "Идеи для стартапов",
-  description: "Каталог идей с фильтрацией и поиском", //TODO можно сделать generateMetadata в этот роут, чтобы title/description формировались динамически из данных идеи
+  description: "Каталог идей с фильтрацией и поиском",
 };
 
 export default async function IdeasPage() {
-  const sql = `
-    SELECT
-        i.id AS idea_id,
-        i.summary,
-        i.problem,
-        i.personas,
-        i.solution,
-        i.gtm,
-        i.risks,
-        i.monetization,
-        i.kpis,
-        i.score,
-        i.created_at,
-        i.sources
-      FROM ideas i
-      WHERE i.summary NOT LIKE 'Automated assistant to remove the top%'
-      ORDER BY i.created_at DESC;
-  `;
-  const { rows: ideas } = await pool.query(sql);
+  const { data: ideas, error } = await supabase
+    .from("ideas")
+    .select(
+      `
+      id,
+      summary,
+      problem,
+      personas,
+      solution,
+      gtm,
+      risks,
+      monetization,
+      kpis,
+      score,
+      created_at,
+      sources
+    `
+    )
+    .not("summary", "like", "Automated assistant to remove the top%")
+    .order("created_at", { ascending: false });
 
-  return <IdeasClient initialIdeas={ideas} />;
+  if (error) throw new Error(error.message);
+
+  return <IdeasClient initialIdeas={(ideas ?? []) as any} />;
 }
