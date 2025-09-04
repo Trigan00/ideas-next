@@ -1,13 +1,14 @@
 // app/api/ideas/[id]/route.ts
 import { supabase } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: { id: string } } | { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const params = await (context.params as any);
+    const { id } = params as { id: string };
 
     const { data, error } = await supabase
       .from("ideas")
