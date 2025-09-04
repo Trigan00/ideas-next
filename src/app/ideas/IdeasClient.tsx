@@ -9,54 +9,20 @@ import { IdeaRow } from "@/types/types";
 import { Search, Sparkles, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useIdeas } from "@/lib/hooks/useIdeas";
 
 function unique<T>(arr: T[]): T[] {
   return Array.from(new Set(arr));
 }
 
-export default function IdeasClient({
-  initialIdeas,
-}: {
-  initialIdeas: IdeaRow[];
-}) {
+//TODO Можно добавить пагинацию, infinite scroll и пр.
+
+export default function IdeasClient() {
   const router = useRouter();
 
-  const [ideas, setIdeas] = useState<IdeaRow[]>(initialIdeas);
-  // const [minScore, setMinScore] = useState(0);
-  // const [maxScore, setMaxScore] = useState(100);
-  const [isLoading, setIsLoading] = useState(false);
   const [q, setQ] = useState("");
 
-  async function fetchIdeas() {
-    try {
-      const params = new URLSearchParams({
-        search: q,
-        // minScore: String(minScore),
-        // maxScore: String(maxScore),
-      });
-      setIsLoading(true);
-      const res = await fetch(`/api/ideas?${params.toString()}`);
-      const data = await res.json();
-      setIdeas(data);
-      setIsLoading(false);
-    } catch (error) {
-      console.log(error);
-      setIsLoading(false);
-    }
-  }
-
-  const filtered = (ideas || []).filter((i) => {
-    const hay = `${i.summary} ${i.problem}`.toLowerCase();
-    return hay.includes(q.toLowerCase());
-  });
-
-  // useEffect(() => {
-  //   if (search || minScore !== 0 || maxScore !== 100) {
-  //     fetchIdeas();
-  //   } else {
-  //     setIdeas(initialIdeas);
-  //   }
-  // }, [search, minScore, maxScore]);
+  const { data: ideas, isLoading, error } = useIdeas(q);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 text-gray-900 dark:text-gray-50">
@@ -84,11 +50,10 @@ export default function IdeasClient({
             ))}
           </div>
         )}
-        {/* {error && <div className="text-red-600">Failed to load ideas</div>} */}
-        {/* {!isLoading && !error && ( */}
-        {!isLoading && (
+        {error && <div className="text-red-600">Failed to load ideas</div>}
+        {ideas && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((idea) => {
+            {ideas.map((idea) => {
               const subs = unique(
                 (idea.sources || [])
                   .map((s) => s.subreddit || "")

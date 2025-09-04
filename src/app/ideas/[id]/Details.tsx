@@ -7,17 +7,22 @@ import fixUrl from "@/helpers/fixUrl";
 import formatDate from "@/helpers/formateDate";
 import safeJSON from "@/helpers/safeJSON";
 import shortenUrl from "@/helpers/shortenUrl";
-import { IdeaRow } from "@/types/types";
 import { ArrowLeft, Clock4, ExternalLink, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useIdea } from "@/lib/hooks/useIdea";
 
-export default function Details({ idea }: { idea: IdeaRow }) {
+export default function Details({ id }: { id: string }) {
   const router = useRouter();
+  const { data: idea, isLoading, error } = useIdea(id);
 
   const personas = idea ? safeJSON<string[] | string>(idea.personas, []) : [];
   const kpis = idea ? safeJSON<string[] | string>(idea.kpis, []) : [];
   const risks = idea ? safeJSON<string[] | string>(idea.risks, []) : [];
   const gtm = idea ? safeJSON<string[] | string>(idea.gtm, []) : [];
+
+  if (error) {
+    return <div className="text-red-600">Error: {error.message}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-950 dark:to-gray-900 text-gray-900 dark:text-gray-50">
@@ -28,11 +33,11 @@ export default function Details({ idea }: { idea: IdeaRow }) {
         >
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
-        {/* {isLoading && (
+        {isLoading && (
           <div className="mt-6">
             <SkeletonCard />
           </div>
-        )} */}
+        )}
         {idea && (
           <div className="mt-6 space-y-6">
             <div className="rounded-2xl border border-gray-200 dark:border-gray-800 p-6 bg-white/70 dark:bg-gray-900/50">
